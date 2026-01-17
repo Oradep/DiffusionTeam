@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title if title else 'Diffusion' }}</title>
+    
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand-purple: #1a0b4e;
+            --brand-blue: #3b82f6;
+            --brand-light-blue: #60a5fa;
+            --bg-dark: #020108;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: #E0E0E0;
+            overflow-x: hidden;
+            margin: 0;
+            cursor: default;
+        }
+
+        /* Эффект перехода (Мягкий импульс Диффузы) */
+        #page-transition-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, rgba(59, 130, 246, 0) 60%);
+            transform: translate(-50%, -50%) scale(0);
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0;
+            filter: blur(20px);
+        }
+
+        .reveal-wave {
+            animation: wave-out 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .exit-wave {
+            animation: wave-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes wave-out {
+            0% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+        }
+
+        @keyframes wave-in {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+        }
+
+        /* Эффект фонарика (скрыт на мобильных для производительности) */
+        @media (min-width: 768px) {
+            #cursor-spotlight {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: -5;
+                background: radial-gradient(circle 500px at var(--mouse-x) var(--mouse-y), rgba(59, 130, 246, 0.12), transparent 80%);
+            }
+        }
+
+        #diffusion-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -10;
+            pointer-events: none;
+        }
+
+        .diffuse-link {
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        .diffuse-link:hover {
+            animation: diffusion-effect 0.5s ease-out forwards;
+            color: var(--brand-light-blue);
+            text-shadow: 0 0 12px rgba(96, 165, 250, 0.6);
+        }
+        @keyframes diffusion-effect {
+            0% { filter: blur(0px); transform: scale(1); }
+            50% { filter: blur(4px); opacity: 0.6; transform: scale(1.05); }
+            100% { filter: blur(0px); opacity: 1; transform: scale(1); }
+        }
+
+        /* Мобильное меню анимации */
+        #mobile-menu {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+        }
+        .menu-open {
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--brand-blue); }
+    </style>
+
+    <style>
+        .dark-glass {
+            background: rgba(0, 0, 0, 0.4) !important; 
+            backdrop-filter: blur(20px) saturate(160%) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        }
+
+        .scan-effect {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scan-effect::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            transform: skewX(-20deg);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .scan-effect:hover::after {
+            animation: scan-anim 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes scan-anim {
+            0% { left: -150%; }
+            100% { left: 150%; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <div id="page-transition-overlay" class="reveal-wave"></div>
+    
+    <div id="cursor-spotlight"></div>
+    <canvas id="diffusion-grid"></canvas>
+
+    <header class="bg-black/60 backdrop-blur-xl sticky top-0 z-50 border-b border-white/5">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center relative z-50">
+            <a href="{{ url_for('index') }}" class="flex items-center group relative z-50">
+                <div class="relative">
+                    <div class="absolute inset-0 bg-brand blur-xl opacity-0 group-hover:opacity-50 transition-opacity"></div>
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="w-8 h-8 md:w-10 md:h-10 transition-all duration-700 group-hover:rotate-[360deg] relative z-10">
+                </div>
+                <span class="ml-3 text-xl md:text-2xl font-black tracking-tighter text-white uppercase group-hover:text-brand transition-colors italic">Diffusion</span>
+            </a>
+
+            <div class="hidden md:flex items-center space-x-10">
+                <a href="{{ url_for('index') }}" class="diffuse-link text-xs font-bold uppercase tracking-[0.2em]">Главная</a>
+                <a href="{{ url_for('team') }}" class="diffuse-link text-xs font-bold uppercase tracking-[0.2em]">Состав</a>
+                <a href="{{ url_for('blog') }}" class="diffuse-link text-xs font-bold uppercase tracking-[0.2em]">Блог</a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('admin') }}" class="text-brand font-black text-xs uppercase tracking-widest border border-brand/30 px-4 py-2 rounded-lg hover:bg-brand/10 transition-all">Админ</a>
+                    <a href="{{ url_for('logout') }}" class="text-white/50 hover:text-white transition-colors text-xs uppercase font-bold">Выход</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="diffuse-link text-xs font-bold uppercase tracking-[0.2em]">Вход</a>
+                {% endif %}
+            </div>
+
+            <button id="mobile-menu-btn" class="md:hidden text-white p-2 relative z-50 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </nav>
+
+        <div id="mobile-menu" class="fixed inset-0 bg-black/98 backdrop-blur-3xl z-40 transform translate-x-full flex flex-col justify-center items-center space-y-8 md:hidden">
+            <a href="{{ url_for('index') }}" class="mobile-link text-2xl font-black uppercase tracking-tighter text-white hover:text-brand transition-colors">Главная</a>
+            <a href="{{ url_for('team') }}" class="mobile-link text-2xl font-black uppercase tracking-tighter text-white hover:text-brand transition-colors">Состав</a>
+            <a href="{{ url_for('blog') }}" class="mobile-link text-2xl font-black uppercase tracking-tighter text-white hover:text-brand transition-colors">Блог</a>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('admin') }}" class="mobile-link text-brand text-xl font-bold uppercase tracking-widest border border-brand/30 px-6 py-3 rounded-xl">Админ Панель</a>
+                <a href="{{ url_for('logout') }}" class="mobile-link text-gray-500 text-sm uppercase font-bold tracking-widest">Выход</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="mobile-link text-xl font-bold uppercase tracking-widest text-white/70">Вход</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 md:px-6 py-8 md:py-12 relative z-10">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-black/80 border-t border-white/5 mt-12 md:mt-20 relative z-10">
+        <div class="container mx-auto px-6 py-8 md:py-10 text-center">
+            <p class="text-[10px] text-gray-600 uppercase tracking-[0.5em]">&copy; {{ year }} DIFFUSION. Проникаем за горизонт.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Переходы
+        document.addEventListener('DOMContentLoaded', () => {
+            const overlay = document.getElementById('page-transition-overlay');
+            const links = document.querySelectorAll('a:not(.mobile-link)'); // Exclude mobile links to handle manually
+
+            const handleTransition = (href) => {
+                overlay.classList.remove('reveal-wave');
+                overlay.classList.add('exit-wave');
+                setTimeout(() => { window.location.href = href; }, 500);
+            };
+
+            links.forEach(link => {
+                link.addEventListener('click', e => {
+                    const href = link.getAttribute('href');
+                    if (href && !href.startsWith('#') && !href.startsWith('http') && !e.metaKey && !e.ctrlKey) {
+                        e.preventDefault();
+                        handleTransition(href);
+                    }
+                });
+            });
+
+            // Mobile Menu Logic
+            const menuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileLinks = document.querySelectorAll('.mobile-link');
+            let isMenuOpen = false;
+
+            menuBtn.addEventListener('click', () => {
+                isMenuOpen = !isMenuOpen;
+                if (isMenuOpen) {
+                    mobileMenu.classList.remove('translate-x-full');
+                    document.body.classList.add('menu-open');
+                    // Change icon to X
+                    menuBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>';
+                } else {
+                    mobileMenu.classList.add('translate-x-full');
+                    document.body.classList.remove('menu-open');
+                    // Change icon to Menu
+                    menuBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>';
+                }
+            });
+
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Close menu then transition
+                    const href = link.getAttribute('href');
+                    if (href && !href.startsWith('#')) {
+                        e.preventDefault();
+                        mobileMenu.classList.add('translate-x-full');
+                        document.body.classList.remove('menu-open');
+                        menuBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>';
+                        isMenuOpen = false;
+                        setTimeout(() => {
+                           handleTransition(href);
+                        }, 300);
+                    }
+                });
+            });
+        });
+
+        // Свет за мышью (только если есть мышь)
+        if (window.matchMedia("(pointer: fine)").matches) {
+            window.addEventListener('mousemove', e => {
+                document.documentElement.style.setProperty('--mouse-x', e.clientX + 'px');
+                document.documentElement.style.setProperty('--mouse-y', e.clientY + 'px');
+            });
+        }
+
+        // СЕТКА
+        const canvas = document.getElementById('diffusion-grid');
+        const ctx = canvas.getContext('2d');
+        let points = [];
+        let rows, cols;
+        const spacing = 70;
+        const mouse = { x: -1000, y: -1000 };
+
+        function initGrid() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            cols = Math.ceil(canvas.width / spacing) + 1;
+            rows = Math.ceil(canvas.height / spacing) + 1;
+            points = [];
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    points.push({ x: i * spacing, y: j * spacing, originX: i * spacing, originY: j * spacing, noiseOff: Math.random() * 1000 });
+                }
+            }
+        }
+
+        function drawLine(p1, p2, distToMouse) {
+            const baseOpacity = 0.08;
+            // Меньше реакции на мобильных
+            const proximityOpacity = Math.max(0, 0.4 * (1 - distToMouse / 200));
+            const finalOpacity = baseOpacity + proximityOpacity;
+
+            ctx.strokeStyle = `rgba(180, 140, 255, ${finalOpacity})`;
+            ctx.lineWidth = distToMouse < 200 ? 0.8 : 0.5;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+
+        function animateGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const time = Date.now() * 0.0008;
+
+            points.forEach(p => {
+                const dx = mouse.x - p.x;
+                const dy = mouse.y - p.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const driftX = Math.sin(time + p.noiseOff) * 8;
+                const driftY = Math.cos(time + p.noiseOff) * 8;
+                let targetX = p.originX + driftX;
+                let targetY = p.originY + driftY;
+                if (dist < 300) {
+                    const force = (300 - dist) / 300;
+                    targetX -= (dx / dist) * force * 40;
+                    targetY -= (dy / dist) * force * 40;
+                }
+                p.x += (targetX - p.x) * 0.1;
+                p.y += (targetY - p.y) * 0.1;
+            });
+
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    const idx = i * rows + j;
+                    const p = points[idx];
+                    const dToMouse = Math.sqrt(Math.pow(mouse.x - p.x, 2) + Math.pow(mouse.y - p.y, 2));
+                    if (i < cols - 1) drawLine(p, points[(i + 1) * rows + j], dToMouse);
+                    if (j < rows - 1) drawLine(p, points[i * rows + (j + 1)], dToMouse);
+                }
+            }
+            requestAnimationFrame(animateGrid);
+        }
+
+        window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        window.addEventListener('resize', initGrid);
+        initGrid();
+        animateGrid();
+    </script>
+</body>
+</html>

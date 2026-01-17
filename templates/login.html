@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="max-w-md mx-auto py-8 md:py-12 px-4">
+    <div class="dark-glass rounded-3xl p-10 shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand to-transparent opacity-50"></div>
+        
+        <div class="text-center mb-8 md:mb-10">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4">
+            <h1 class="text-xl md:text-2xl font-black text-white uppercase tracking-widest">Системный вход</h1>
+            <p class="text-gray-500 text-xs mt-2 uppercase">Доступ только для администрации</p>
+        </div>
+
+        <form method="POST" action="">
+            <div class="mb-4 md:mb-6">
+                <label for="username" class="block text-gray-500 text-xs font-bold uppercase tracking-widest mb-2 ml-1">ID Пользователя</label>
+                <input type="text" name="username" id="username" class="w-full bg-black/40 border border-white/10 rounded-xl py-3 md:py-4 px-5 text-white focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-all" required>
+            </div>
+            <div class="mb-6 md:mb-8">
+                <label for="password" class="block text-gray-500 text-xs font-bold uppercase tracking-widest mb-2 ml-1">Ключ доступа</label>
+                <input type="password" name="password" id="password" class="w-full bg-black/40 border border-white/10 rounded-xl py-3 md:py-4 px-5 text-white focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-all" required>
+            </div>
+            <button type="submit" class="w-full bg-brand text-white font-black py-3 md:py-4 px-4 rounded-xl hover:bg-blue-600 hover:shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all duration-300 uppercase tracking-widest text-sm md:text-base">
+                Авторизоваться
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

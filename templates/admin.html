@@ -1,0 +1,88 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8 md:space-y-12">
+    <div class="dark-glass rounded-3xl p-8 md:p-12 relative">
+        <h1 class="text-2xl md:text-3xl font-black text-white mb-6 md:mb-8 uppercase tracking-tighter flex items-center gap-3">
+            <span class="w-2 h-2 md:w-3 md:h-3 bg-brand rounded-full animate-pulse"></span>
+            Создать публикацию
+        </h1>
+        
+        <form method="POST" action="{{ url_for('admin') }}" enctype="multipart/form-data" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-6">
+                    <div class="mb-4">
+                        <label for="title" class="block text-gray-400 text-xs md:text-sm font-bold mb-2 uppercase">Заголовок</label>
+                        <input type="text" name="title" id="title" maxlength="80" required
+                            class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand outline-none transition-all">
+                        
+                        <div class="flex justify-end mt-1">
+                            <span id="char-counter" class="text-xs text-gray-500 transition-colors">0 / 80</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-500 text-xs font-bold uppercase mb-2">Медиа-файл</label>
+                        <input type="file" name="image" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-brand/10 file:text-brand hover:file:bg-brand/20 transition-all">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-500 text-xs font-bold uppercase mb-2">Контент</label>
+                    <textarea name="content" rows="6" class="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-brand transition-all resize-none" required></textarea>
+                </div>
+            </div>
+            <button type="submit" class="w-full bg-brand text-white font-black py-3 md:py-4 rounded-xl hover:bg-blue-600 transition-all uppercase tracking-widest shadow-lg shadow-brand/20">
+                Опубликовать в систему
+            </button>
+        </form>
+    </div>
+
+    <div class="dark-glass rounded-3xl p-8 md:p-12 relative">
+        <h2 class="text-lg md:text-xl font-bold text-white mb-4 md:mb-6 uppercase tracking-widest">Архив записей</h2>
+        <div class="divide-y divide-white/5">
+            {% if posts %}
+                {% for post in posts %}
+                    <div class="py-4 flex justify-between items-center group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white/5 flex items-center justify-center text-brand font-bold text-xs shrink-0">
+                                {{ loop.index }}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-white text-sm md:text-base font-medium group-hover:text-brand transition-colors truncate pr-4">{{ post.title }}</p>
+                                <p class="text-[10px] md:text-xs text-gray-600">{{ post.date_posted|datetimeformat }}</p>
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" onsubmit="return confirm('Удалить этот объект из базы данных?');" class="shrink-0">
+                            <button type="submit" class="p-2 text-gray-600 hover:text-red-500 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-600 text-center py-4">Данные отсутствуют</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    const titleInput = document.getElementById('title');
+    const charCounter = document.getElementById('char-counter');
+    const limit = 80;
+
+    titleInput.addEventListener('input', () => {
+        const length = titleInput.value.length;
+        charCounter.textContent = `${length} / ${limit}`;
+
+        if (length >= limit) {
+            charCounter.classList.remove('text-gray-500');
+            charCounter.classList.add('text-red-500', 'font-bold');
+        } else {
+            charCounter.classList.add('text-gray-500');
+            charCounter.classList.remove('text-red-500', 'font-bold');
+        }
+    });
+</script>
+{% endblock %}

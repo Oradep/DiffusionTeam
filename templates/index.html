@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="text-center">
+    <div class="mb-10 md:mb-16 transform transition-transform duration-700 hover:scale-105">
+        <img src="{{ url_for('static', filename='images/logo_text.png') }}" alt="Diffusion" class="max-w-[80%] md:max-w-2xl mx-auto drop-shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+    </div>
+    
+    <div class="max-w-4xl mx-auto space-y-12 md:space-y-16">
+        <div class="relative px-4">
+            <p class="text-lg md:text-2xl text-blue-300/80 font-light italic tracking-wide">
+                "Чем гуще лес - шкибиди доп доп ес ес"
+            </p>
+            <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-16 md:w-24 h-1 bg-brand rounded-full opacity-50"></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 text-left">
+            <div class="dark-glass p-6 md:p-8 rounded-2xl hover:border-blue-400 transition-colors">
+                <h2 class="text-xl md:text-2xl font-bold text-white mb-4 flex items-center">
+                    <span class="w-1.5 md:w-2 h-6 md:h-8 bg-brand mr-3 rounded-full"></span>
+                    Идеи и цели
+                </h2>
+                <p class="text-sm md:text-base text-gray-400 leading-relaxed">
+                    Мы играем, чтобы получать удовольствие. А больше удовольствия, чем победа, приносит только винстрик
+                </p>
+            </div>
+
+            <div class="dark-glass p-6 md:p-8 rounded-2xl hover:border-blue-400 transition-colors">
+                <h2 class="text-xl md:text-2xl font-bold text-white mb-4 flex items-center">
+                    <span class="w-1.5 md:w-2 h-6 md:h-8 bg-brand mr-3 rounded-full"></span>
+                    История
+                </h2>
+                <p class="text-sm md:text-base text-gray-400 leading-relaxed">
+                   От пати в турбо до LAN-этапов. В сезоне 2024-25 мы пересмотрели свой стиль. Теперь мы здесь, чтобы доминировать.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
