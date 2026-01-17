@@ -14,10 +14,10 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# --- Конфигурация приложения ---
+# --- Конфигурация ---
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default-dev-key-123')
 
-# Настройка БД (исправляем протокол для SQLAlchemy)
+# Настройка БД (фикс для Vercel/Postgres)
 uri = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
 if uri and uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
@@ -26,7 +26,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.config['BABEL_DEFAULT_LOCALE'] = 'ru'
 
-# Настройка Cloudinary
+# Настройка Cloudinary (для фото)
 cloudinary.config(
     cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'),
     api_key = os.environ.get('CLOUDINARY_API_KEY'),
@@ -36,7 +36,7 @@ cloudinary.config(
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'pivo3228')
 
-# --- Инициализация ---
+# --- Инициализация компонентов ---
 db = SQLAlchemy(app)
 babel = Babel(app)
 login_manager = LoginManager(app)
@@ -53,15 +53,14 @@ class Post(db.Model):
     title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    # Теперь здесь хранится полный URL из Cloudinary
-    image_url = db.Column(db.String(500), nullable=True)
-    public_id = db.Column(db.String(255), nullable=True) # Для удаления из облака
+    image_url = db.Column(db.String(500), nullable=True) # Прямая ссылка на Cloudinary
+    public_id = db.Column(db.String(255), nullable=True) # ID для удаления из облака
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# --- Фильтры и контекст ---
+# --- Фильтры и глобальные переменные ---
 @app.context_processor
 def inject_year():
     return {'year': datetime.utcnow().year}
@@ -70,7 +69,8 @@ def inject_year():
 def format_datetime_filter(value, format='d MMMM yyyy'):
     return format_date(value, format)
 
-# --- Маршруты ---
+# --- МАРШРУТЫ (ROUTES) ---
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -90,7 +90,7 @@ def blog():
     posts = Post.query.order_by(Post.date_posted.desc()).all()
     return render_template('blog.html', posts=posts)
 
-# ДОБАВЛЕН ПРОПУЩЕННЫЙ МАРШРУТ ПРОСМОТРА ПОСТА
+# Маршрут для просмотра одного поста (его не хватало)
 @app.route('/post/<int:post_id>')
 def post(post_id):
     post = Post.query.get_or_404(post_id)
@@ -105,10 +105,10 @@ def login():
         if user and check_password_hash(user.password, request.form.get('password')):
             login_user(user)
             return redirect(url_for('admin'))
-        flash('Неверный вход', 'danger')
+        flash('Неверный логин или пароль', 'danger')
     return render_template('login.html')
 
-# ДОБАВЛЕН ПРОПУЩЕННЫЙ МАРШРУТ ВЫХОДА
+# Маршрут выхода (из-за которого была ошибка)
 @app.route('/logout')
 @login_required
 def logout():
@@ -128,17 +128,16 @@ def admin():
 
         if image and image.filename != '':
             try:
-                # Загрузка напрямую в Cloudinary
                 upload_result = cloudinary.uploader.upload(image)
                 img_url = upload_result.get('secure_url')
                 p_id = upload_result.get('public_id')
             except Exception as e:
-                flash(f'Ошибка загрузки изображения: {e}', 'danger')
+                flash(f'Ошибка загрузки фото: {e}', 'danger')
 
         new_post = Post(title=title, content=content, image_url=img_url, public_id=p_id)
         db.session.add(new_post)
         db.session.commit()
-        flash('Пост создан!', 'success')
+        flash('Запись успешно опубликована!', 'success')
         return redirect(url_for('admin'))
 
     posts = Post.query.order_by(Post.date_posted.desc()).all()
@@ -147,18 +146,19 @@ def admin():
 @app.route('/delete_post/<int:post_id>', methods=['POST'])
 @login_required
 def delete_post(post_id):
-    post = Post.query.get_or_404(post_id)
-    if post.public_id:
+    post_to_delete = Post.query.get_or_404(post_id)
+    if post_to_delete.public_id:
         try:
-            cloudinary.uploader.destroy(post.public_id)
+            cloudinary.uploader.destroy(post_to_delete.public_id)
         except Exception as e:
-            print(f"Error deleting from Cloudinary: {e}")
+            print(f"Ошибка удаления из Cloudinary: {e}")
             
-    db.session.delete(post)
+    db.session.delete(post_to_delete)
     db.session.commit()
+    flash('Пост удален', 'info')
     return redirect(url_for('admin'))
 
-# Маршрут для первичного создания таблиц
+# Инициализация БД
 @app.route('/init-db')
 def init_db():
     db.create_all()
@@ -167,7 +167,7 @@ def init_db():
         admin_user = User(username=ADMIN_USERNAME, password=hashed_password)
         db.session.add(admin_user)
         db.session.commit()
-    return "DB Initialized!"
+    return "База данных успешно инициализирована!"
 
 if __name__ == '__main__':
     app.run(debug=True)
