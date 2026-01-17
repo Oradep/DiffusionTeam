@@ -1,53 +1,46 @@
 import os
+import json
+import cloudinary
+import cloudinary.uploader
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
-from datetime import datetime
 from flask_babel import Babel, format_date
-import json
-import os
-from dotenv import load_dotenv # Добавить это
+from dotenv import load_dotenv
 
 load_dotenv()
 
-# --- Конфигурация приложения через переменные окружения ---
 app = Flask(__name__)
 
-# Секретный ключ (обязательно измените его в настройках хостинга!)
+# --- Конфигурация приложения ---
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default-dev-key-123')
 
-# База данных (если переменная не задана, используем sqlite локально)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
+# Настройка БД (исправляем протокол для SQLAlchemy)
+uri = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
+if uri.startswith("postgres://"):
+    uri = uri.replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = uri
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Папка для загрузки (лучше использовать абсолютный путь)
-app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', os.path.join(app.root_path, 'static/uploads'))
-
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['BABEL_DEFAULT_LOCALE'] = 'ru'
 
-# Данные администратора по умолчанию
+# Настройка Cloudinary
+cloudinary.config(
+    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key = os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret = os.environ.get('CLOUDINARY_API_SECRET')
+)
+
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'pivo3228')
 
-# --- Инициализация расширений ---
+# --- Инициализация ---
 db = SQLAlchemy(app)
 babel = Babel(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
-login_manager.login_message = "Пожалуйста, войдите, чтобы получить доступ к этой странице."
-login_manager.login_message_category = "info"
-
-# --- Context Processor ---
-@app.context_processor
-def inject_year():
-    return {'year': datetime.utcnow().year}
-
-# --- Custom filter ---
-@app.template_filter('datetimeformat')
-def format_datetime_filter(value, format='d MMMM yyyy'):
-    return format_date(value, format)
 
 # --- Модели ---
 class User(UserMixin, db.Model):
@@ -60,13 +53,24 @@ class Post(db.Model):
     title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    image_file = db.Column(db.String(255), nullable=True)
+    # Теперь здесь хранится полный URL из Cloudinary
+    image_url = db.Column(db.String(500), nullable=True)
+    public_id = db.Column(db.String(255), nullable=True) # Для удаления из облака
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# --- Маршруты (логика осталась прежней) ---
+# --- Фильтры и контекст ---
+@app.context_processor
+def inject_year():
+    return {'year': datetime.utcnow().year}
+
+@app.template_filter('datetimeformat')
+def format_datetime_filter(value, format='d MMMM yyyy'):
+    return format_date(value, format)
+
+# --- Маршруты ---
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -74,46 +78,29 @@ def index():
 @app.route('/team')
 def team():
     try:
-        # Путь к JSON теперь тоже можно настраивать, если нужно
         json_path = os.path.join(app.root_path, 'instance', 'members.json')
         with open(json_path, 'r', encoding='utf-8') as f:
             team_data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+    except Exception:
         team_data = {}
-        print("Ошибка: Файл members.json не найден.")
-    return render_template('team.html', team_data=team_data, title="Наша команда")
+    return render_template('team.html', team_data=team_data)
 
 @app.route('/blog')
 def blog():
     posts = Post.query.order_by(Post.date_posted.desc()).all()
-    return render_template('blog.html', posts=posts, title="Блог")
-
-@app.route('/post/<int:post_id>')
-def post(post_id):
-    post = Post.query.get_or_404(post_id)
-    return render_template('post.html', post=post, title=post.title)
+    return render_template('blog.html', posts=posts)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('admin'))
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password, password):
+        user = User.query.filter_by(username=request.form.get('username')).first()
+        if user and check_password_hash(user.password, request.form.get('password')):
             login_user(user)
-            next_page = request.args.get('next')
-            return redirect(next_page) if next_page else redirect(url_for('admin'))
-        else:
-            flash('Неверный логин или пароль.', 'danger')
-    return render_template('login.html', title="Вход")
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('index'))
+            return redirect(url_for('admin'))
+        flash('Неверный вход', 'danger')
+    return render_template('login.html')
 
 @app.route('/admin', methods=['GET', 'POST'])
 @login_required
@@ -123,58 +110,44 @@ def admin():
         content = request.form.get('content')
         image = request.files.get('image')
 
-        if not title or not content:
-            flash('Заголовок и содержание не могут быть пустыми.', 'warning')
-            return redirect(request.url)
-        
-        if len(title) > 80:
-            flash('Заголовок слишком длинный.', 'warning')
-            return redirect(request.url)
+        img_url = None
+        p_id = None
 
-        filename = None
         if image and image.filename != '':
-            filename = secure_filename(image.filename)
-            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-            image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            # Загрузка напрямую в Cloudinary
+            upload_result = cloudinary.uploader.upload(image)
+            img_url = upload_result.get('secure_url')
+            p_id = upload_result.get('public_id')
 
-        new_post = Post(title=title, content=content, image_file=filename)
+        new_post = Post(title=title, content=content, image_url=img_url, public_id=p_id)
         db.session.add(new_post)
         db.session.commit()
-        flash('Пост успешно создан!', 'success')
+        flash('Пост создан!', 'success')
         return redirect(url_for('admin'))
 
     posts = Post.query.order_by(Post.date_posted.desc()).all()
-    return render_template('admin.html', title="Админ-панель", posts=posts)
+    return render_template('admin.html', posts=posts)
 
 @app.route('/delete_post/<int:post_id>', methods=['POST'])
 @login_required
 def delete_post(post_id):
-    post_to_delete = Post.query.get_or_404(post_id)
-    if post_to_delete.image_file:
-        try:
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], post_to_delete.image_file)
-            if os.path.exists(image_path):
-                os.remove(image_path)
-        except Exception as e:
-            print(f"Ошибка удаления файла: {e}")
-    db.session.delete(post_to_delete)
+    post = Post.query.get_or_404(post_id)
+    if post.public_id:
+        cloudinary.uploader.destroy(post.public_id)
+    db.session.delete(post)
     db.session.commit()
-    flash('Пост успешно удален!', 'success')
     return redirect(url_for('admin'))
 
-def setup_database(app):
-    with app.app_context():
-        db.create_all()
-        # Проверяем админа, используя переменные ADMIN_USERNAME и ADMIN_PASSWORD
-        if not User.query.filter_by(username=ADMIN_USERNAME).first():
-            hashed_password = generate_password_hash(ADMIN_PASSWORD, method='pbkdf2:sha256')
-            admin_user = User(username=ADMIN_USERNAME, password=hashed_password)
-            db.session.add(admin_user)
-            db.session.commit()
-            print(f"Администратор '{ADMIN_USERNAME}' создан.")
+# Маршрут для первичного создания таблиц
+@app.route('/init-db')
+def init_db():
+    db.create_all()
+    if not User.query.filter_by(username=ADMIN_USERNAME).first():
+        hashed_password = generate_password_hash(ADMIN_PASSWORD, method='pbkdf2:sha256')
+        admin_user = User(username=ADMIN_USERNAME, password=hashed_password)
+        db.session.add(admin_user)
+        db.session.commit()
+    return "DB Initialized!"
 
 if __name__ == '__main__':
-    setup_database(app)
-    # Динамический порт для хостинга
-    port = int(os.environ.get('PORT', 5000))
-    app.run(debug=os.environ.get('DEBUG', 'False') == 'True', host='0.0.0.0', port=port)
+    app.run(debug=True)
