@@ -19,7 +19,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default-dev-key-123')
 
 # Настройка БД (исправляем протокол для SQLAlchemy)
 uri = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
-if uri.startswith("postgres://"):
+if uri and uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -90,6 +90,12 @@ def blog():
     posts = Post.query.order_by(Post.date_posted.desc()).all()
     return render_template('blog.html', posts=posts)
 
+# ДОБАВЛЕН ПРОПУЩЕННЫЙ МАРШРУТ ПРОСМОТРА ПОСТА
+@app.route('/post/<int:post_id>')
+def post(post_id):
+    post = Post.query.get_or_404(post_id)
+    return render_template('post.html', post=post)
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -101,6 +107,13 @@ def login():
             return redirect(url_for('admin'))
         flash('Неверный вход', 'danger')
     return render_template('login.html')
+
+# ДОБАВЛЕН ПРОПУЩЕННЫЙ МАРШРУТ ВЫХОДА
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 @app.route('/admin', methods=['GET', 'POST'])
 @login_required
@@ -114,10 +127,13 @@ def admin():
         p_id = None
 
         if image and image.filename != '':
-            # Загрузка напрямую в Cloudinary
-            upload_result = cloudinary.uploader.upload(image)
-            img_url = upload_result.get('secure_url')
-            p_id = upload_result.get('public_id')
+            try:
+                # Загрузка напрямую в Cloudinary
+                upload_result = cloudinary.uploader.upload(image)
+                img_url = upload_result.get('secure_url')
+                p_id = upload_result.get('public_id')
+            except Exception as e:
+                flash(f'Ошибка загрузки изображения: {e}', 'danger')
 
         new_post = Post(title=title, content=content, image_url=img_url, public_id=p_id)
         db.session.add(new_post)
@@ -133,7 +149,11 @@ def admin():
 def delete_post(post_id):
     post = Post.query.get_or_404(post_id)
     if post.public_id:
-        cloudinary.uploader.destroy(post.public_id)
+        try:
+            cloudinary.uploader.destroy(post.public_id)
+        except Exception as e:
+            print(f"Error deleting from Cloudinary: {e}")
+            
     db.session.delete(post)
     db.session.commit()
     return redirect(url_for('admin'))
