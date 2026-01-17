@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block content %}
+<article class="max-w-4xl mx-auto">
+    <div class="mb-6 md:mb-10 flex items-center justify-between">
+        <a href="{{ url_for('blog') }}" class="diffuse-link text-xs md:text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Назад
+        </a>
+        <div class="text-right">
+            <p class="text-[10px] md:text-xs text-gray-500 uppercase tracking-tighter">Дата публикации</p>
+            <p class="text-brand text-sm md:text-base font-bold">{{ post.date_posted|datetimeformat }}</p>
+        </div>
+    </div>
+
+    <div class="dark-glass rounded-3xl overflow-hidden shadow-2xl">
+        {# ИЗМЕНЕНИЕ: Проверка наличия ссылки #}
+        {% if post.image_url %}
+        <div class="w-full flex justify-center bg-transparent">
+            {# ИЗМЕНЕНИЕ: Вывод прямой ссылки #}
+            <img src="{{ post.image_url }}" 
+                 alt="{{ post.title }}" 
+                 class="max-w-full h-auto max-h-[50vh] md:max-h-[80vh] object-contain">
+        </div>
+        {% endif %}
+
+        <div class="p-6 md:p-16">
+            <h1 class="text-3xl md:text-6xl font-black text-white mb-6 md:mb-8 tracking-tighter leading-tight break-words">{{ post.title }}</h1>
+            <div class="prose prose-invert prose-base md:prose-lg max-w-none text-gray-300 leading-relaxed whitespace-pre-wrap">
+                {{ post.content }}
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}
