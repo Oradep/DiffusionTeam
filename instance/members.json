@@ -62,8 +62,8 @@
         "nickname": "Левченко Егор",
         "role": "Поиск в интернете",
         "name": "Крутой игрок",
-        "photo": "static/images/icons/serach.jpg",
-        "bigphoto": "static/images/icons/serachbig.jpg",
+        "photo": "static/images/icons/search.jpg",
+        "bigphoto": "static/images/icons/searchbig.jpg",
         "age": 15,
         "bio": ""
       },
