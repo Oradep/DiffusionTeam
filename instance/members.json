@@ -59,37 +59,33 @@
     "title": "Другие дисциплины",
     "players": [
       {
-        "nickname": "Никнейм",
+        "nickname": "Левченко Егор",
         "role": "Поиск в интернете",
-        "name": "Фамилия Имя",
-        "photo": "https://placehold.co/512x512/1a202c/7a8a9e?text=Поиск в интернете",
+        "photo": "static/images/icons/serach",
         "bigphoto": "static/images/members/placeholder.png",
         "age": 21,
         "bio": ""
       },
             {
-        "nickname": "Никнейм",
+        "nickname": "Васильев Игорь",
         "role": "Электронные шахматы",
-        "name": "Фамилия Имя",
-        "photo": "https://placehold.co/512x512/1a202c/7a8a9e?text=Электронные шахматы",
+        "photo": "static/images/icons/cmates",
         "bigphoto": "static/images/members/placeholder.png",
         "age": 52,
         "bio": ""
       },
             {
-        "nickname": "Никнейм",
+        "nickname": "Клок Виктория",
         "role": "Тетрис",
-        "name": "Фамилия Имя",
-        "photo": "https://placehold.co/512x512/1a202c/7a8a9e?text=Тетрис",
+        "photo": "static/images/icons/tetris",
         "bigphoto": "static/images/members/placeholder.png",
         "age": 67,
         "bio": ""
       },
             {
-        "nickname": "Никнейм",
+        "nickname": "Киряков Денис",
         "role": "Мир танков",
-        "name": "Фамилия Имя",
-        "photo": "https://placehold.co/512x512/1a202c/7a8a9e?text=Мир танков",
+        "photo": "static/images/icons/tanks",
         "bigphoto": "static/images/members/placeholder.png",
         "age": 92,
         "bio": ""
