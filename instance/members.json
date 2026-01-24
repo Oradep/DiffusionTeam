@@ -9,7 +9,7 @@
         "photo": "static/images/members/segaani.jpg",
         "bigphoto": "static/images/members/segaanibig.jpg",
         "age": 16,
-        "favorite_heroes": ["Phantom Lancer", "Monkey King", "Sven"],
+        "favorite_heroes": ["Pudge","Pudge","Pudge"],
         "bio": "Его можно описать большим количеством хороших слов, но я пока не буду. Упомяну лишь его 30% винрейта на морфе... 2 ГОДА НАЗАД, А СЕЙЧАС НИКИТОС - МАШИНА ДЛЯ ТУРБОРЕАКТИВНОСКОРОСТНОГО СНОСА ВСЕЙ НЕДВИЖИМОСТИ ОППОНЕНТА ВПЛОТЬ ДО ПОСЛЕДНЕГО ТУАЛЕТА! Непоколебимый и не тильтующий, дайте ему два твикса - и он будет выигрывать игру за игрой"
       },
       {
@@ -19,7 +19,7 @@
         "photo": "static/images/members/awake.jpg",
         "bigphoto": "static/images/members/awakebig.jpg",
         "age": 14,
-        "favorite_heroes": ["Broodmother", "Keeper Of The Light", "Tinker"],
+        "favorite_heroes": ["Pudge","Pudge","Pudge"],
         "bio": "Высший ранг состава, наш капитан, плейбой, миллиардер, филантроп. Молодой талант, бесплатно бустящий нашу команду. Имеет большой опыт как разноса пабликов, так и игры в компетитив доту"
       },
       {
@@ -29,7 +29,7 @@
         "photo": "static/images/members/likeboss.jpg",
         "bigphoto": "static/images/members/likebossbig.jpg",
         "age": 16,
-        "favorite_heroes": ["Яндекс Такси/magnataur"],
+        "favorite_heroes": ["Pudge","Pudge","Pudge"],
         "bio": "Внебрачный сын Коллапса и Амора. У Сашки на столе всегда стоят 2 тарелки: одна для арбуза, другая для хинкала (массонабор по расписанию). На завтрак этот монстр ест бутерброды с цементом и запивает уксусом. Он умеет вовремя ворваться, оторваться, вырваться, порваться да и вообще очень одарённый парень"
       },
       {
@@ -39,7 +39,7 @@
         "photo": "static/images/members/shishka.png",
         "bigphoto": "static/images/members/shishkabig.jpg",
         "age": 16,
-        "favorite_heroes": ["Enigma", "Witch Doctor", "Dazzle", "Lion"],
+        "favorite_heroes": ["Pudge","Pudge","Pudge"],
         "bio": "Шишка — древесный плод хвойных растений, служащий для сохранения и распространения семян. Она образуется на соснах, елях и кедрах и открывается при созревании, чтобы выпустить семена и дать жизни новым деревьям"
       },
       {
@@ -49,7 +49,7 @@
         "photo": "static/images/members/oradep.jpg",
         "bigphoto": "static/images/members/oradepbig.jpg",
         "age": 16,
-        "favorite_heroes": ["пудж/pudge", "10/wisp","болтозвяк/rattletrap","магический бладсикер/bloodseeker#"],
+        "favorite_heroes": ["Pudge","Pudge","Pudge"],
         "bio": "Сильнейший пудж страны, живая легенда, умнейший игрок команды, красивый, накачанный и !!!ни в коем слуаче!!! не автор этого сайта. Умеет снимать файт с наилучших ракурсов, хукать союзников, крипов, союзников, по возможности врагов, чемпион по скоростному фиду (рекорд 252 смерти за игру, оуеее)"
       }
 
@@ -59,39 +59,39 @@
     "title": "Другие дисциплины",
     "players": [
       {
-        "nickname": "Никнейм",
+        "nickname": "Левченко Егор",
         "role": "Поиск в интернете",
-        "name": "Фамилия Имя",
-        "photo": "https://placehold.co/512x512/1a202c/7a8a9e?text=Поиск в интернете",
-        "bigphoto": "static/images/members/placeholder.png",
-        "age": 21,
+        "name": "Крутой игрок",
+        "photo": "static/images/icons/search.jpg",
+        "bigphoto": "static/images/icons/searchbig.jpg",
+        "age": 15,
         "bio": ""
       },
             {
-        "nickname": "Никнейм",
+        "nickname": "Васильев Игорь",
         "role": "Электронные шахматы",
-        "name": "Фамилия Имя",
-        "photo": "https://placehold.co/512x512/1a202c/7a8a9e?text=Электронные шахматы",
-        "bigphoto": "static/images/members/placeholder.png",
-        "age": 52,
+        "name": "Крутой игрок",
+        "photo": "static/images/icons/cmates.jpg",
+        "bigphoto": "static/images/icons/cmatesbig.jpg",
+        "age": 16,
         "bio": ""
       },
             {
-        "nickname": "Никнейм",
+        "nickname": "Клок Виктория",
         "role": "Тетрис",
-        "name": "Фамилия Имя",
-        "photo": "https://placehold.co/512x512/1a202c/7a8a9e?text=Тетрис",
-        "bigphoto": "static/images/members/placeholder.png",
-        "age": 67,
+        "name": "Крутой игрок",
+        "photo": "static/images/icons/tetris.jpg",
+        "bigphoto": "static/images/icons/tetrisbig.jpg",
+        "age": 16,
         "bio": ""
       },
             {
-        "nickname": "Никнейм",
+        "nickname": "Киряков Денис",
         "role": "Мир танков",
-        "name": "Фамилия Имя",
-        "photo": "https://placehold.co/512x512/1a202c/7a8a9e?text=Мир танков",
-        "bigphoto": "static/images/members/placeholder.png",
-        "age": 92,
+        "name": "Крутой игрок",
+        "photo": "static/images/icons/tanks.jpg",
+        "bigphoto": "static/images/icons/tanksbig.jpg",
+        "age": 15,
         "bio": ""
       }
     ]
