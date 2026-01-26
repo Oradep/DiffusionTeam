@@ -15,9 +15,11 @@
     </div>
 
     <div class="dark-glass rounded-3xl overflow-hidden shadow-2xl">
-        {% if post.image_file %}
+        {# ИЗМЕНЕНИЕ: Проверка наличия ссылки #}
+        {% if post.image_url %}
         <div class="w-full flex justify-center bg-transparent">
-            <img src="{{ url_for('static', filename='uploads/' + post.image_file) }}" 
+            {# ИЗМЕНЕНИЕ: Вывод прямой ссылки #}
+            <img src="{{ post.image_url }}" 
                  alt="{{ post.title }}" 
                  class="max-w-full h-auto max-h-[50vh] md:max-h-[80vh] object-contain">
         </div>
